@@ -12,19 +12,14 @@ Visit official game at: [Memory Match Game](https://jaimegonzalezjr.com/games/me
 * Quasar (Front-End/Styling)
 * Strapi Headless CMS (Back-End)
 
+![Screenshot](https://github.com/lnsflive/MatchMemoryGame/blob/main/src/assets/ss1.png)
+![Screenshot](https://github.com/lnsflive/MatchMemoryGame/blob/main/src/assets/ss2.png)
+
 ## Build Setup
 
 ```bash
 # install dependencies
 $ yarn install
 
-# serve with hot reload at localhost:3000
-$ yarn dev
-
-# build for production and launch server
-$ yarn build
-$ yarn start
-
-# generate static project
-$ yarn generate
-```
+# serve with hot reload at localhost:8080
+$ yarn run webDebug // quasar dev
