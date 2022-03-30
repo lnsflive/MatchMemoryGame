@@ -1,12 +1,10 @@
 # MEMORY MATCH GAME
 
-
 ### `High Score Game - With working leaderboard`
 
 Complete matching game done with native support in mind. Built with Quasar and can be exported for Mobile, Web, PWA or Desktop.
 
 Visit official game at: [Memory Match Game](https://jaimegonzalezjr.com/games/memory/).
-
 
 ## Built With
 * Quasar (Front-End/Styling)
