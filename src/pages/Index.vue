@@ -135,12 +135,7 @@ export default defineComponent ({
       return {headers:{Authorization:'Bearer ' + token}, withCredentials:false}
     },
     login(){
-      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join('')
-      sessionStorage.setItem('strapi_google_state', nonce)
-      sessionStorage.setItem('strapi_google_return', '/games/memory/#/')
-      const callback = new URL('https://jaimegonzalezjr.com/Projects/TimeForge/auth/google')
-      callback.searchParams.set('state', nonce)
-      window.location.assign('https://strapi.jaimegonzalezjr.com/connect/google?callback=' + encodeURIComponent(callback.href))
+      window.location.assign('https://jaimegonzalezjr.com/Projects/TimeForge/auth/google?app=memory')
     },
     async loadAccount(){
       this.loading = true
