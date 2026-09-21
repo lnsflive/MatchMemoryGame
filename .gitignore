@@ -31,3 +31,10 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
+
+.deploy-backups/
+
+# Private local environment overrides
+.env
+.env.*
+!.env.example

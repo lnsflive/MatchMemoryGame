@@ -11,7 +11,8 @@
     "androidEmul": "quasar dev -m cordova -T android",
     "androidDebug": "quasar dev -m cordova -T android --ide",
     "build/androidIDE": "quasar build -m cordova -T android --ide",
-    "buildIcons": "icongenie g -i ./src/assets/icon.png -b ./src/assets/bg.png"
+    "buildIcons": "icongenie g -i ./src/assets/icon.png -b ./src/assets/bg.png",
+    "test:auth": "node tests/auth.cjs && node tests/auth-return.cjs"
   },
   "dependencies": {
     "@quasar/app": "^3.1.0",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@quasar/app": "^3.1.0",
     "@quasar/quasar-app-extension-qoverlay": "^2.0.0",
+    "dotenv": "17.2.0",
     "strip-ansi": "=3.0.1"
   },
   "browserslist": [
