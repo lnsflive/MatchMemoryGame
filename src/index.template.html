@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script>
+      // Preserve provider return parameters before the hash router normalizes the URL.
+      const authQuery = new URLSearchParams(window.location.search)
+      if (['state', 'access_token', 'error'].some(key => authQuery.has(key))) {
+        window.__memoryAuthReturn = window.location.search
+        window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+      }
+    </script>
     <title><%= productName %></title>
 
     <meta charset="utf-8">

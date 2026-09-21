@@ -1,0 +1,10 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('src/index.template.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+const query='?state=nonce&access_token=fixture';let replaced;
+const window={location:{search:query,pathname:'/games/memory/',hash:''},history:{replaceState:(_state,_title,url)=>replaced=url}};
+vm.runInNewContext(source,{window,URLSearchParams});assert.equal(window.__memoryAuthReturn,query);assert.equal(replaced,'/games/memory/');
+window.location.search='';
+const appSource=fs.readFileSync('src/App.vue','utf8').match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/gm,'').replace('export default','module.exports=');
+const context={window,URLSearchParams,defineComponent:x=>x,GoogleAuth:{},module:{exports:{}}};vm.runInNewContext(appSource,context);
+const data=context.module.exports.data();assert.equal(data.isAuthReturn,true);assert.equal(data.authSearch,query);assert.equal(window.__memoryAuthReturn,undefined);
+console.log('Memory callback survives hash-router URL normalization');

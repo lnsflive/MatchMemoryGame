@@ -1,5 +1,5 @@
 <template>
-  <GoogleAuth v-if="isAuthReturn" />
+  <GoogleAuth v-if="isAuthReturn" :search="authSearch" />
   <router-view v-else id="q-app" />
 </template>
 <script>
@@ -9,8 +9,10 @@ export default defineComponent({
   name:'App',
   components:{GoogleAuth},
   data() {
-    const query = new URLSearchParams(window.location.search)
-    return {isAuthReturn:['state','access_token','error'].some(key => query.has(key))}
+    const authSearch = window.__memoryAuthReturn || window.location.search
+    delete window.__memoryAuthReturn
+    const query = new URLSearchParams(authSearch)
+    return {authSearch,isAuthReturn:['state','access_token','error'].some(key => query.has(key))}
   }
 })
 </script>

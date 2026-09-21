@@ -12,9 +12,10 @@ import MemoryLayout from 'layouts/MemoryLayout.vue'
 import { completeGoogleLogin } from 'src/utils/google-auth'
 export default {
   components: {MemoryLayout},
+  props: {search: {type:String, required:true}},
   data: () => ({error:''}),
   async mounted() {
-    const search = window.location.search
+    const search = this.search
     window.history.replaceState(null, '', window.location.pathname)
     try { window.location.replace(await completeGoogleLogin(search)) }
     catch (_) { this.error = 'Sign-in could not be completed. Please try again.' }

@@ -12,7 +12,7 @@
     "androidDebug": "quasar dev -m cordova -T android --ide",
     "build/androidIDE": "quasar build -m cordova -T android --ide",
     "buildIcons": "icongenie g -i ./src/assets/icon.png -b ./src/assets/bg.png",
-    "test:auth": "node tests/auth.cjs",
+    "test:auth": "node tests/auth.cjs && node tests/auth-return.cjs",
     "deploy:preview": "node scripts/deploy.cjs --preview",
     "deploy": "npm run webBuild && node scripts/deploy.cjs"
   },
