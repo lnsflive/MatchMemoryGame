@@ -123,23 +123,33 @@ export default defineComponent ({
       sortable: true
     }]
   }),
-  computed: { loginUrl(){ return api.defaults.baseURL.replace(/\/$/, '') + '/portfolio/auth/start?app=memory' } },
   created () {
     this.createCatalog()
     this.loadAccount()
   },
   beforeUnmount(){ clearInterval(this.mainTimer) },
   methods: {
-    login(){ window.location.assign(this.loginUrl) },
+    authConfig(){
+      const token = localStorage.getItem('strapi_jwt')
+      if (!token) throw Object.assign(new Error('Sign in required'), {response:{status:401}})
+      return {headers:{Authorization:'Bearer ' + token}, withCredentials:false}
+    },
+    login(){
+      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join('')
+      sessionStorage.setItem('strapi_google_state', nonce)
+      sessionStorage.setItem('strapi_google_return', '/games/memory/#/')
+      const callback = new URL('https://jaimegonzalezjr.com/Projects/TimeForge/auth/google')
+      callback.searchParams.set('state', nonce)
+      window.location.assign('https://strapi.jaimegonzalezjr.com/connect/google?callback=' + encodeURIComponent(callback.href))
+    },
     async loadAccount(){
       this.loading = true
       this.authError = ''
       try {
-        this.user = (await api.get('/portfolio/session')).data.user
-        try { this.applyProfile((await api.get('/portfolio/games/memory/me')).data) }
-        catch(error) {
-          if (!error.response || error.response.status !== 404) throw error
-        }
+        this.user = (await api.get('/users/me', this.authConfig())).data
+        const profiles = (await api.get('/memorygames?portfolioUserId=' + encodeURIComponent(this.user.id), this.authConfig())).data
+        if (profiles.length) this.applyProfile(profiles[0])
+        else this.playerId = null
         await this.getDB()
       } catch(error) { this.handleError(error) }
       finally { this.loading = false }
@@ -170,7 +180,8 @@ export default defineComponent ({
     async logout(){
       this.busy = true
       try {
-        await api.post('/portfolio/auth/logout')
+        localStorage.removeItem('strapi_jwt')
+        try { await api.post('/auth/logout', {}, {withCredentials:true}) } catch (_) {}
         window.location.reload()
       } catch(error) { this.handleError(error) }
       finally { this.busy = false }
@@ -180,7 +191,7 @@ export default defineComponent ({
       this.busy = true
       this.authError = ''
       try {
-        this.applyProfile((await api.post('/portfolio/games/memory/me', {player: this.newName.trim().toLowerCase()})).data)
+        this.applyProfile((await api.post('/memorygames', {player: this.newName.trim().toLowerCase()}, this.authConfig())).data)
       } catch(error) {
         if (error.response && error.response.status === 409) {
           if (error.response.data.error === 'profile_exists') await this.loadAccount()
@@ -314,7 +325,7 @@ export default defineComponent ({
       if (this.busy) return
       this.busy = true
       try {
-        await api.put('/portfolio/games/memory/me', {score: this.highScore})
+        await api.put('/memorygames/' + this.playerId, {score: this.highScore}, this.authConfig())
         this.newHighScore = false
         await this.getDB()
         this.hasWon = false
@@ -323,7 +334,7 @@ export default defineComponent ({
       finally { this.busy = false }
     },
     async getDB(){
-      this.rows = (await api.get('/portfolio/games/memory/leaderboard')).data
+      this.rows = (await api.get('/memorygames?_sort=score:desc', this.authConfig())).data
     }
 
   }
