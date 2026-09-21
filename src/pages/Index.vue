@@ -1,12 +1,12 @@
 <template>
-<q-layout view="hHh lpR fFf full-width full-height">
+<MemoryLayout>
 <q-dialog :model-value="!user || loading || !playerId" persistent>
   <q-card class="q-pa-lg" style="max-width: 440px">
     <h2 class="text-h5">Memory Game</h2>
     <p v-if="loading">Checking your account…</p>
     <template v-else-if="!user">
       <p>Sign in with Google to recover your player on any device.</p>
-      <q-btn @click="login" color="primary" label="Continue with Google" />
+      <AccountForm @signed-in="loadAccount" />
       <q-btn @click="loadAccount" label="Retry" />
     </template>
     <form v-else @submit.prevent="createPlayer">
@@ -41,17 +41,11 @@
   </div>
   </q-card>
 </q-dialog>
-    <q-page-container class=" row full-height full-width">
-    <q-header class="row full-width justify-center shadow-5 q-py-sm q-px-lg" style="min-width:317px;">
-      <div class="row">
-        <q-img class="row" src="img/logo.png" fit="contain" style="max-height: 80px; max-width:400px;" />
-        <div class="row no-wrap">
+<template #account>
           <q-btn v-if="user" @click="logout" :disable="busy" flat label="Sign out of shared account" />
           <q-btn class="column text-warning" flat icon-right="person">{{username}}</q-btn>
           <q-btn class="column text-secondary" @click="leaderboards = !leaderboards" flat  icon-right="emoji_events">{{highScore}}</q-btn>
-        </div>
-      </div>
-    </q-header>
+</template>
     <q-page class="row full-width justify-center no-margin q-px-sm q-py-lg bg-dark" style="min-width:317px;">
         <div v-for="(colz,index) in newArray" :key="colz" class="colz transparent no-border">
             <q-btn :disable="!playerId || !user" rounded class="qBtn no-padding" @click="testClick">
@@ -59,20 +53,25 @@
             </q-btn>
         </div>
     </q-page>
-    <q-footer class="justify-around row no-wrap full-width q-pa-sm" style="min-width:317px;">
+    <template #footer>
         <div class="text-secondary text-h6"><q-icon size="md" name="timer"/>: {{time}}</div>
         <q-btn class="bg-orange"  rounded @click="refreshPage" icon="restart_alt" />
         <div class="text-right text-h6 text-secondary">{{moves}}:<q-icon size="md" name="do_not_touch"/></div>
-    </q-footer>
-    </q-page-container>
-</q-layout>
+    </template>
+
+</MemoryLayout>
 </template>
 
 <script>
+import { startGoogleLogin, getAccounts } from 'src/utils/google-auth'
+
 import { api } from 'boot/axios'
+import AccountForm from 'components/AccountForm.vue'
+import MemoryLayout from 'layouts/MemoryLayout.vue'
 import { Notify } from 'quasar'
 import { defineComponent } from 'vue';
 export default defineComponent ({
+  components: {MemoryLayout,AccountForm},
   data: () => ({
     catalogArray: ['shopping_cart', 'local_florist', 'favorite', 'lightbulb', 'star_rate', 'extension', 'pets', 'nightlight_round', 'photo_camera', 'cookie', 'face', 'thumb_up', 'visibility', 'build', 'savings', 'android', 'thumb_down', 'hourglass_empty', 'anchor', 'music_note', 'brush', 'color_lens', 'flash_on', 'landscape', 'checkroom', 'all_inclusive', 'airport_shuttle', 'sports_bar', 'casino', 'ac_unit', 'fitness_center', 'sports_esports', 'catching_pokemon', 'sports_football', 'cruelty_free', 'piano', 'skateboarding', 'key', 'attach_file', 'attach_money', 'headphones', 'flight', 'lunch_dining', 'two_wheeler', 'icecream'],
     iconsArray: [],
@@ -94,6 +93,7 @@ export default defineComponent ({
     cardColor: 'white',
     moves: 0,
     playerId: null,
+    accounts: null,
     user: null,
     loading: true,
     busy: false,
@@ -130,17 +130,20 @@ export default defineComponent ({
   beforeUnmount(){ clearInterval(this.mainTimer) },
   methods: {
     authConfig(){
-      const token = localStorage.getItem('strapi_jwt')
+      const token = localStorage.getItem(this.accounts ? this.accounts.storageKey() : 'strapi_jwt')
       if (!token) throw Object.assign(new Error('Sign in required'), {response:{status:401}})
       return {headers:{Authorization:'Bearer ' + token}, withCredentials:false}
     },
-    login(){
-      window.location.assign('https://jaimegonzalezjr.com/Projects/TimeForge/auth/google?app=memory')
+    async login(){
+      this.authError = ''
+      try { window.location.assign(await startGoogleLogin()) }
+      catch (_) { this.authError = 'Unable to start Google sign-in. Please try again.' }
     },
     async loadAccount(){
       this.loading = true
       this.authError = ''
       try {
+        this.accounts = await getAccounts()
         this.user = (await api.get('/users/me', this.authConfig())).data
         const profiles = (await api.get('/memorygames?portfolioUserId=' + encodeURIComponent(this.user.id), this.authConfig())).data
         if (profiles.length) this.applyProfile(profiles[0])
@@ -175,7 +178,7 @@ export default defineComponent ({
     async logout(){
       this.busy = true
       try {
-        localStorage.removeItem('strapi_jwt')
+        localStorage.removeItem(this.accounts ? this.accounts.storageKey() : 'strapi_jwt')
         try { await api.post('/auth/logout', {}, {withCredentials:true}) } catch (_) {}
         window.location.reload()
       } catch(error) { this.handleError(error) }
