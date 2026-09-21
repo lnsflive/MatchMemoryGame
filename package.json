@@ -11,7 +11,10 @@
     "androidEmul": "quasar dev -m cordova -T android",
     "androidDebug": "quasar dev -m cordova -T android --ide",
     "build/androidIDE": "quasar build -m cordova -T android --ide",
-    "buildIcons": "icongenie g -i ./src/assets/icon.png -b ./src/assets/bg.png"
+    "buildIcons": "icongenie g -i ./src/assets/icon.png -b ./src/assets/bg.png",
+    "test:auth": "node tests/auth.cjs",
+    "deploy:preview": "node scripts/deploy.cjs --preview",
+    "deploy": "npm run webBuild && node scripts/deploy.cjs"
   },
   "dependencies": {
     "@quasar/app": "^3.1.0",

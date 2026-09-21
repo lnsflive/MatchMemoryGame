@@ -1,5 +1,23 @@
 <template>
 <q-layout view="hHh lpR fFf full-width full-height">
+<q-dialog :model-value="!user || loading || !playerId" persistent>
+  <q-card class="q-pa-lg" style="max-width: 440px">
+    <h2 class="text-h5">Memory Game</h2>
+    <p v-if="loading">Checking your account…</p>
+    <template v-else-if="!user">
+      <p>Sign in with Google to recover your player on any device.</p>
+      <q-btn :href="loginUrl" color="primary" label="Continue with Google" />
+      <q-btn @click="loadAccount" label="Retry" />
+    </template>
+    <form v-else @submit.prevent="createPlayer">
+      <p>Choose a player name to link to your Google account. Existing names require an administrator to migrate them.</p>
+      <q-input v-model="newName" label="Player name" maxlength="30" />
+      <q-btn type="submit" :disable="busy || newName.trim().length < 4" label="Create player" color="primary" />
+      <q-btn @click="logout" :disable="busy" label="Sign out" />
+    </form>
+    <p v-if="authError" role="alert">{{authError}}</p>
+  </q-card>
+</q-dialog>
 <q-dialog v-model="hasWon" persistent>
   <q-card class="full-width column wrap justify-center items-center content-center q-pa-lg">
     <div v-if="newHighScore" class="row text-h3">New High Score</div>
@@ -28,6 +46,7 @@
       <div class="row">
         <q-img class="row" src="img/logo.png" fit="contain" style="max-height: 80px; max-width:400px;" />
         <div class="row no-wrap">
+          <q-btn v-if="user" @click="logout" :disable="busy" flat label="Sign out of shared account" />
           <q-btn class="column text-warning" flat icon-right="person">{{username}}</q-btn>
           <q-btn class="column text-secondary" @click="leaderboards = !leaderboards" flat  icon-right="emoji_events">{{highScore}}</q-btn>
         </div>
@@ -35,7 +54,7 @@
     </q-header>
     <q-page class="row full-width justify-center no-margin q-px-sm q-py-lg bg-dark" style="min-width:317px;">
         <div v-for="(colz,index) in newArray" :key="colz" class="colz transparent no-border">
-            <q-btn rounded class="qBtn no-padding" @click="testClick">
+            <q-btn :disable="!playerId || !user" rounded class="qBtn no-padding" @click="testClick">
               <q-icon :color="cardColor" class="no-pointer-events flip-horizontal" :name="newArray[index]" />
             </q-btn>
         </div>
@@ -51,7 +70,7 @@
 
 <script>
 import { api } from 'boot/axios'
-import { LocalStorage, Notify, Dialog } from 'quasar'
+import { Notify } from 'quasar'
 import { defineComponent } from 'vue';
 export default defineComponent ({
   data: () => ({
@@ -75,6 +94,11 @@ export default defineComponent ({
     cardColor: 'white',
     moves: 0,
     playerId: null,
+    user: null,
+    loading: true,
+    busy: false,
+    newName: '',
+    authError: '',
     playerInfo: [],
     highScore: null,
     newHighScore: false,
@@ -99,36 +123,68 @@ export default defineComponent ({
       sortable: true
     }]
   }),
+  computed: { loginUrl(){ return api.defaults.baseURL.replace(/\/$/, '') + '/portfolio/auth/start?app=memory' } },
   created () {
     this.createCatalog()
-    if(LocalStorage !==undefined){
-      console.log('has localStorage')
-    }else{
-        console.log('doesnt have localStorage')
-    }
-    if(LocalStorage.has('playerid')){
-      this.playerId = LocalStorage.getItem('playerid')
-      this.checkPlayerExist()
-    } else{
-      this.promptMe()
-    }
-    this.getDB()
+    this.loadAccount()
   },
-  destroyed(){
-    clearInterval(this.mainTimer)
-  },
-  watch: {
-    highScore(){
-      LocalStorage.set("highScore", this.highScore)
-    },
-    username(){
-      LocalStorage.set("username", this.username)
-    },
-    playerId(){
-      LocalStorage.set("playerid", this.playerId)
-    }
-  },
+  beforeUnmount(){ clearInterval(this.mainTimer) },
   methods: {
+    async loadAccount(){
+      this.loading = true
+      this.authError = ''
+      try {
+        this.user = (await api.get('/portfolio/session')).data.user
+        try { this.applyProfile((await api.get('/portfolio/games/memory/me')).data) }
+        catch(error) {
+          if (!error.response || error.response.status !== 404) throw error
+        }
+        await this.getDB()
+      } catch(error) { this.handleError(error) }
+      finally { this.loading = false }
+    },
+    applyProfile(profile){
+      this.playerId = profile.id
+      this.username = profile.player
+      this.highScore = profile.score
+    },
+    handleError(error){
+      if (error.response && error.response.status === 401) {
+        this.user = null
+        this.playerId = null
+        this.username = null
+        this.highScore = null
+        this.rows = []
+        this.hasWon = false
+        this.leaderboards = false
+        clearInterval(this.mainTimer)
+        this.authError = 'Please sign in with Google to continue.'
+      } else {
+        this.authError = 'Unable to load or save your account. Please retry.'
+      }
+      Notify.create({type: 'negative', message: this.authError})
+    },
+    async logout(){
+      this.busy = true
+      try {
+        await api.post('/portfolio/auth/logout')
+        window.location.reload()
+      } catch(error) { this.handleError(error) }
+      finally { this.busy = false }
+    },
+    async createPlayer(){
+      if (this.busy || this.newName.trim().length < 4) return
+      this.busy = true
+      this.authError = ''
+      try {
+        this.applyProfile((await api.post('/portfolio/games/memory/me', {player: this.newName.trim().toLowerCase()})).data)
+      } catch(error) {
+        if (error.response && error.response.status === 409) {
+          if (error.response.data.error === 'profile_exists') await this.loadAccount()
+          else this.authError = 'That name is reserved. Choose another name or contact the administrator to migrate your existing player.'
+        } else this.handleError(error)
+      } finally { this.busy = false }
+    },
     createCatalog(){
       for(let i = 0; i < 10; i++){
         const randInt = Math.floor(Math.random() * this.catalogArray.length)
@@ -158,44 +214,8 @@ export default defineComponent ({
     reduceMultiplier(){
       this.timeMultiplier -= 10
     },
-    promptMe(){
-      this.username = null
-      LocalStorage.clear()
-      Dialog.create({
-        dark: true,
-        title: 'New Player',
-        message: 'What is your name?',
-        prompt: {
-          model: '',
-          type: 'text',
-          isValid: val => val.length > 3,
-        },
-        cancel: false,
-        persistent: true
-      }).onOk(data => {
-        api.get('/memorygames/player/' + data.toLowerCase())
-          .then((response) => {
-            // player exists
-            this.promptMe()
-            Notify.create('Player already exists')
-          })
-          .catch(() => {
-            this.username = data.toLowerCase()
-            api.post('/memorygames', {
-              player: this.username,
-              score: 0
-            })
-            .then((response) => {
-              this.playerId = response.data.id
-              Notify.create('Welcome ' + this.username)
-            })
-            .catch(() => {
-              Notify.create('create Error')
-            })
-          })
-      })
-    },
     testClick(event){
+      if (!this.user || !this.playerId) return
       // parent click boolean
       if(this.canClick){
         // start timer
@@ -287,33 +307,22 @@ export default defineComponent ({
       let output = [currRowz+""+currColz].join() - subtract
       return output
     },
-    postScore(){
-      api.put('/memorygames/' + this.playerId, {
-        player: this.username,
-        score: this.highScore
-      })
-      .then(() => {
-        this.getDB()
+    async postScore(){
+      if (this.busy) return
+      this.busy = true
+      try {
+        await api.put('/portfolio/games/memory/me', {score: this.highScore})
+        this.newHighScore = false
+        await this.getDB()
+        this.hasWon = false
         this.leaderboards = true
-      })
+      } catch(error) { this.handleError(error) }
+      finally { this.busy = false }
     },
-    getDB(){
-      api.get('/memorygames/?_sort=score:DESC')
-        .then((response) => {
-          this.rows = response.data
-        })
-    },
-    checkPlayerExist(){
-      api.get('/memorygames/' + this.playerId)
-        .then((response) => {
-          this.playerInfo = response.data
-          this.username = this.playerInfo.player
-          this.highScore = this.playerInfo.score
-        })
-        .catch(() => {
-          this.promptMe()
-        })
+    async getDB(){
+      this.rows = (await api.get('/portfolio/games/memory/leaderboard')).data
     }
+
   }
 })
 </script>

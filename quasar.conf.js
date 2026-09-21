@@ -46,7 +46,8 @@ module.exports = configure(function (ctx) {
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
       // transpile: false,
-      // publicPath: '/',
+      publicPath: process.env.APP_BASE_PATH || '/games/memory/',
+      env: { API_BASE_URL: process.env.API_BASE_URL || 'https://api.jaimegonzalezjr.com' },
 
       // Add dependencies for transpiling with Babel (Array of string/regex)
       // (from node_modules, which are by default not transpiled).
