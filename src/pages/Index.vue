@@ -10,7 +10,7 @@
       <q-btn @click="loadAccount" label="Retry" />
     </template>
     <form v-else @submit.prevent="createPlayer">
-      <p>Choose a player name to link to your Google account. Existing names require an administrator to migrate them.</p>
+      <p>Choose a player name to link to your account. Existing names require an administrator to migrate them.</p>
       <q-input v-model="newName" label="Player name" maxlength="30" />
       <q-btn type="submit" :disable="busy || newName.trim().length < 4" label="Create player" color="primary" />
       <q-btn @click="logout" :disable="busy" label="Sign out" />
