@@ -6,6 +6,8 @@
 // Configuration for your app
 // https://quasar.dev/quasar-cli/quasar-conf-js
 
+// Local .env supplies defaults; explicitly exported build settings take precedence.
+require('dotenv').config({ quiet: true });
 const { configure } = require('quasar/wrappers');
 
 module.exports = configure(function (ctx) {
@@ -46,7 +48,7 @@ module.exports = configure(function (ctx) {
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
       // transpile: false,
-      publicPath: process.env.APP_BASE_PATH || '/games/memory/',
+      publicPath: process.env.APP_BASE_PATH || '/',
       env: { API_BASE_URL: process.env.API_BASE_URL || 'https://api.jaimegonzalezjr.com' },
 
       // Add dependencies for transpiling with Babel (Array of string/regex)
