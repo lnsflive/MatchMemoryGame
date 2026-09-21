@@ -21,8 +21,8 @@ const options=context.module.exports;
 function instance(){const obj={...options.data(),$axios:axios,$nextTick:fn=>fn()};for(const [name,fn] of Object.entries(options.methods)) obj[name]=fn.bind(obj);return obj;}
 function failure(status,error){return Object.assign(new Error('API failure'),{response:{status,data:{error}}});}
 (async()=>{
- let app=instance();replies=[{user:{id:7}},game==='blackjack'?{id:11,name:'Returning',bank:1234}:{id:11,player:'returning',score:500},[]];
- await app.loadAccount();assert.equal(game==='blackjack'?app.playerName:app.username,game==='blackjack'?'Returning':'returning');assert.ok(requests.some(r=>r.url===`/portfolio/games/${game}/me`));
+ let app=instance();replies=[{user:{id:7}},game==='blackjack'?{id:11,name:'Returning',bank:'1234'}:{id:11,player:'returning',score:'500'},[]];
+ await app.loadAccount();assert.equal(game==='blackjack'?app.playerName:app.username,game==='blackjack'?'Returning':'returning');assert.equal(game==='blackjack'?app.bankAmount:app.highScore,game==='blackjack'?1234:500);assert.throws(()=>app.applyProfile(game==='blackjack'?{bank:'invalid'}:{score:'invalid'}),/Invalid saved/);assert.ok(requests.some(r=>r.url===`/portfolio/games/${game}/me`));
  app=instance();replies=[failure(401)];await app.loadAccount();assert.equal(app.user,null);assert.equal(game==='blackjack'?app.userID:app.playerId,null);
  app=instance();replies=[{user:{id:7}},failure(404),[]];await app.loadAccount();assert.equal(app.user.id,7);assert.equal(game==='blackjack'?app.userID:app.playerId,null);
  app=instance();app.user={id:7};app.tempPlayer='Reserved';app.newName='Reserved';app.invalid=false;replies=[failure(409,'name_taken')];await (game==='blackjack'?app.submitPlayer():app.createPlayer());assert.match(app.authError,/reserved/);assert.equal(game==='blackjack'?app.userID:app.playerId,null);

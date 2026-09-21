@@ -144,9 +144,11 @@ export default defineComponent ({
       finally { this.loading = false }
     },
     applyProfile(profile){
+      const value = Number(profile.score)
+      if (!['number', 'string'].includes(typeof profile.score) || String(profile.score).trim() === '' || !Number.isFinite(value) || !Number.isSafeInteger(value) || value < 0) throw new Error('Invalid saved profile value')
       this.playerId = profile.id
       this.username = profile.player
-      this.highScore = profile.score
+      this.highScore = value
     },
     handleError(error){
       if (error.response && error.response.status === 401) {
