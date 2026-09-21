@@ -15,12 +15,14 @@ const call = async (method, url, body) => {
 };
 const axios = {$get: u => call('GET',u), $post:(u,b)=>call('POST',u,b), $put:(u,b)=>call('PUT',u,b)};
 const api = {get:async u=>({data:await call('GET',u)}),post:async(u,b)=>({data:await call('POST',u,b)}),put:async(u,b)=>({data:await call('PUT',u,b)})};
-const context = {module:{exports:{}},Audio:function(){},defineComponent:x=>x,api,Notify:{create(){}},defaultApp:{},AppBar:{},clearInterval(){},Promise,console};
+let navigatedTo;
+const context = {window:{location:{assign(url){navigatedTo=url}}},module:{exports:{}},Audio:function(){},defineComponent:x=>x,api,Notify:{create(){}},defaultApp:{},AppBar:{},clearInterval(){},Promise,console};
 vm.runInNewContext(script, context);
 const options=context.module.exports;
 function instance(){const obj={...options.data(),$axios:axios,$nextTick:fn=>fn()};for(const [name,fn] of Object.entries(options.methods)) obj[name]=fn.bind(obj);return obj;}
 function failure(status,error){return Object.assign(new Error('API failure'),{response:{status,data:{error}}});}
 (async()=>{
+ let loginApp=instance();loginApp.loginUrl='https://api.jaimegonzalezjr.com/portfolio/auth/start?app=memory';loginApp.login();assert.equal(navigatedTo,loginApp.loginUrl);
  let app=instance();replies=[{user:{id:7}},game==='blackjack'?{id:11,name:'Returning',bank:'1234'}:{id:11,player:'returning',score:'500'},[]];
  await app.loadAccount();assert.equal(game==='blackjack'?app.playerName:app.username,game==='blackjack'?'Returning':'returning');assert.equal(game==='blackjack'?app.bankAmount:app.highScore,game==='blackjack'?1234:500);assert.throws(()=>app.applyProfile(game==='blackjack'?{bank:'invalid'}:{score:'invalid'}),/Invalid saved/);assert.ok(requests.some(r=>r.url===`/portfolio/games/${game}/me`));
  app=instance();replies=[failure(401)];await app.loadAccount();assert.equal(app.user,null);assert.equal(game==='blackjack'?app.userID:app.playerId,null);

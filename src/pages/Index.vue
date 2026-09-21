@@ -6,7 +6,7 @@
     <p v-if="loading">Checking your account…</p>
     <template v-else-if="!user">
       <p>Sign in with Google to recover your player on any device.</p>
-      <q-btn :href="loginUrl" color="primary" label="Continue with Google" />
+      <q-btn @click="login" color="primary" label="Continue with Google" />
       <q-btn @click="loadAccount" label="Retry" />
     </template>
     <form v-else @submit.prevent="createPlayer">
@@ -130,6 +130,7 @@ export default defineComponent ({
   },
   beforeUnmount(){ clearInterval(this.mainTimer) },
   methods: {
+    login(){ window.location.assign(this.loginUrl) },
     async loadAccount(){
       this.loading = true
       this.authError = ''
