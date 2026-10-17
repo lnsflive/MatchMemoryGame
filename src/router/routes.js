@@ -2,21 +2,21 @@
 const routes = [
   {
     path: '/',
-    component: () => import('pages/Index.vue'),
+    component: () => import('../pages/Index.vue'),
     children: [
-      { path: '', component: () => import('pages/Index.vue') }
+      { path: '', component: () => import('../pages/Index.vue') }
     ]
   },
   {
     path: '/leaderboard',
-    component: () => import('pages/leaderboard.vue')
+    component: () => import('../pages/leaderboard.vue')
   },
 
   // Always leave this as last one,
   // but you can also remove it
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/Error404.vue')
+    component: () => import('../pages/Error404.vue')
   }
 ]
 

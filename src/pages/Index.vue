@@ -63,11 +63,11 @@
 </template>
 
 <script>
-import { startGoogleLogin, getAccounts } from 'src/utils/google-auth'
+import { startGoogleLogin, getAccounts } from '../utils/google-auth'
 
-import { api } from 'boot/axios'
-import AccountForm from 'components/AccountForm.vue'
-import MemoryLayout from 'layouts/MemoryLayout.vue'
+import { api } from '../boot/axios'
+import AccountForm from '../components/AccountForm.vue'
+import MemoryLayout from '../layouts/MemoryLayout.vue'
 import { Notify } from 'quasar'
 import { defineComponent } from 'vue';
 export default defineComponent ({

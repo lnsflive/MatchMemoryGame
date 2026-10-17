@@ -12,9 +12,6 @@ const { configure } = require('quasar/wrappers');
 
 module.exports = configure(function (ctx) {
   return {
-    // https://quasar.dev/quasar-cli/supporting-ts
-    supportTS: false,
-
     // https://quasar.dev/quasar-cli/prefetch-feature
     // preFetch: true,
 
@@ -46,16 +43,12 @@ module.exports = configure(function (ctx) {
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
       ...(process.env.BUILD_OUTPUT ? { distDir: process.env.BUILD_OUTPUT } : {}),
+      allowOutsideProjectDistDir: Boolean(process.env.BUILD_OUTPUT),
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
       // transpile: false,
       publicPath: process.env.APP_BASE_PATH || '/',
       env: { API_BASE_URL: process.env.API_BASE_URL || 'https://api.jaimegonzalezjr.com' },
-
-      // Add dependencies for transpiling with Babel (Array of string/regex)
-      // (from node_modules, which are by default not transpiled).
-      // Applies only if "transpile" is set to true.
-      // transpileDependencies: [],
 
       // rtl: true, // https://quasar.dev/options/rtl-support
       // preloadChunks: true,
@@ -66,11 +59,6 @@ module.exports = configure(function (ctx) {
       // Options below are automatically set depending on the env, set them if you want to override
       // extractCSS: false,
 
-      // https://quasar.dev/quasar-cli/handling-webpack
-      // "chain" is a webpack-chain object https://github.com/neutrinojs/webpack-chain
-      chainWebpack (/* chain */) {
-        //
-      },
     },
 
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-devServer

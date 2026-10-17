@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const source=fs.readFileSync('src/index.template.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+const source=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 const query='?state=nonce&access_token=fixture';let replaced;
 const window={location:{search:query,pathname:'/games/memory/',hash:''},history:{replaceState:(_state,_title,url)=>replaced=url}};
 vm.runInNewContext(source,{window,URLSearchParams});assert.equal(window.__memoryAuthReturn,query);assert.equal(replaced,'/games/memory/');

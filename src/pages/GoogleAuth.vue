@@ -8,8 +8,8 @@
   </MemoryLayout>
 </template>
 <script>
-import MemoryLayout from 'layouts/MemoryLayout.vue'
-import { completeGoogleLogin } from 'src/utils/google-auth'
+import MemoryLayout from '../layouts/MemoryLayout.vue'
+import { completeGoogleLogin } from '../utils/google-auth'
 export default {
   components: {MemoryLayout},
   props: {search: {type:String, required:true}},

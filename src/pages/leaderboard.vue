@@ -4,7 +4,7 @@
 
 <script>
 
-import Tester from 'components/tester.vue'
+import Tester from '../components/tester.vue'
 
 
 export default {

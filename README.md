@@ -17,10 +17,10 @@ Visit official game at: [Memory Match Game](https://jaimegonzalezjr.com/games/me
 
 ```bash
 # install dependencies
-$ yarn install
+$ npm install
 
 # serve with hot reload at localhost:8080
-$ yarn run webDebug // quasar dev
+$ npm run webDebug
 ```
 
 ## Tests
@@ -34,6 +34,9 @@ npm test
 # Playwright browser test
 npx playwright install chromium
 npm run test:e2e
+
+# Linux fallback when browser system libraries are unavailable
+npm run test:e2e:docker
 ```
 
 Linux hosts also need Chromium's system libraries. On supported distributions,

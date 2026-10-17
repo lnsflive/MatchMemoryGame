@@ -1,6 +1,6 @@
 <template><div><div ref="form" /><p v-if="error" role="alert">{{ error }}</p></div></template>
 <script>
-import { mountAccountForm } from 'src/utils/google-auth'
+import { mountAccountForm } from '../utils/google-auth'
 export default {
   data: () => ({error:'',accountForm:null}),
   async mounted() {

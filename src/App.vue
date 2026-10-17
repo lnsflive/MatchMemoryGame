@@ -4,7 +4,7 @@
 </template>
 <script>
 import { defineComponent } from 'vue'
-import GoogleAuth from 'pages/GoogleAuth.vue'
+import GoogleAuth from './pages/GoogleAuth.vue'
 export default defineComponent({
   name:'App',
   components:{GoogleAuth},

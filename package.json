@@ -16,25 +16,23 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:docker": "docker run --rm --network host -v \"$PWD:/work\" -w /work mcr.microsoft.com/playwright:v1.64.1-noble npx playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:auth": "node tests/auth.cjs && node tests/auth-return.cjs"
   },
   "dependencies": {
-    "@quasar/app": "^3.1.0",
-    "@quasar/extras": "^1.0.0",
-    "@quasar/quasar-app-extension-qoverlay": "^2.0.0",
-    "axios": "^0.24.0",
-    "cordova": "^10.0.0",
-    "core-js": "^3.6.5",
-    "quasar": "^2.3.0",
-    "yarn": "^1.22.17"
+    "@quasar/extras": "^2.1.0",
+    "axios": "^1.20.0",
+    "core-js": "^3.50.0",
+    "quasar": "^2.35.1",
+    "vue": "^3.5.44",
+    "vue-router": "^5.4.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "@quasar/app": "^3.1.0",
-    "@quasar/quasar-app-extension-qoverlay": "^2.0.0",
-    "dotenv": "17.2.0",
-    "strip-ansi": "=3.0.1",
+    "@quasar/app-vite": "^3.10.3",
+    "autoprefixer": "^10.6.1",
+    "dotenv": "^18.0.8",
     "vitest": "^5.0.5"
   },
   "browserslist": [
@@ -50,7 +48,6 @@
   ],
   "engines": {
     "node": ">= 22.12.0",
-    "npm": ">= 10.0.0",
-    "yarn": ">= 1.21.1"
+    "npm": ">= 10.0.0"
   }
 }
