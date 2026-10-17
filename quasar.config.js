@@ -44,11 +44,12 @@ module.exports = configure(function (ctx) {
     build: {
       ...(process.env.BUILD_OUTPUT ? { distDir: process.env.BUILD_OUTPUT } : {}),
       allowOutsideProjectDistDir: Boolean(process.env.BUILD_OUTPUT),
+      vueOptionsAPI: true,
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
       // transpile: false,
       publicPath: process.env.APP_BASE_PATH || '/',
-      env: { API_BASE_URL: process.env.API_BASE_URL || 'https://api.jaimegonzalezjr.com' },
+      defineEnv: { API_BASE_URL: process.env.API_BASE_URL || 'https://api.jaimegonzalezjr.com' },
 
       // rtl: true, // https://quasar.dev/options/rtl-support
       // preloadChunks: true,
