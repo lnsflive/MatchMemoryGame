@@ -12,6 +12,11 @@
     "androidDebug": "quasar dev -m cordova -T android --ide",
     "build/androidIDE": "quasar build -m cordova -T android --ide",
     "buildIcons": "icongenie g -i ./src/assets/icon.png -b ./src/assets/bg.png",
+    "test": "npm run test:unit && npm run test:auth",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:auth": "node tests/auth.cjs && node tests/auth-return.cjs"
   },
   "dependencies": {
@@ -25,10 +30,12 @@
     "yarn": "^1.22.17"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@quasar/app": "^3.1.0",
     "@quasar/quasar-app-extension-qoverlay": "^2.0.0",
     "dotenv": "17.2.0",
-    "strip-ansi": "=3.0.1"
+    "strip-ansi": "=3.0.1",
+    "vitest": "^5.0.5"
   },
   "browserslist": [
     "last 10 Chrome versions",
@@ -42,8 +49,8 @@
     "last 5 Opera versions"
   ],
   "engines": {
-    "node": ">= 12.22.1",
-    "npm": ">= 6.13.4",
+    "node": ">= 22.12.0",
+    "npm": ">= 10.0.0",
     "yarn": ">= 1.21.1"
   }
 }

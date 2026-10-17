@@ -23,6 +23,22 @@ $ yarn install
 $ yarn run webDebug // quasar dev
 ```
 
+## Tests
+
+The test tools require Node.js 22.12 or newer.
+
+```bash
+# Vitest unit tests and the existing auth checks
+npm test
+
+# Playwright browser test
+npx playwright install chromium
+npm run test:e2e
+```
+
+Linux hosts also need Chromium's system libraries. On supported distributions,
+install them with `npx playwright install-deps chromium`.
+
 ## Google account login and Web Station deployment
 
 The browser uses native Strapi REST with a shared strapi_jwt local-storage bearer token. Google returns to this app's own `/games/memory/` callback. The reusable account client and form are served from `https://api.jaimegonzalezjr.com/auth/client.v1.js` and maintained in the Strapi repository. Native game collections enforce account ownership on the server. Existing anonymous names require administrator migration. API_BASE_URL defaults to https://api.jaimegonzalezjr.com.

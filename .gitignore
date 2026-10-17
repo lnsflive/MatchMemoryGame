@@ -34,6 +34,11 @@ yarn-error.log*
 
 .deploy-backups/
 
+# Test output
+/playwright-report/
+/test-results/
+/coverage/
+
 # Private local environment overrides
 .env
 .env.*
