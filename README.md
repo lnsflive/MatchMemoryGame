@@ -10,8 +10,17 @@ Visit official game at: [Memory Match Game](https://jaimegonzalezjr.com/games/me
 * Quasar (Front-End/Styling)
 * Strapi Headless CMS (Back-End)
 
-![Screenshot](https://github.com/lnsflive/MatchMemoryGame/blob/main/src/assets/ss1.png)
-![Screenshot](https://github.com/lnsflive/MatchMemoryGame/blob/main/src/assets/ss2.png)
+## Screenshots
+
+![Desktop game with matched pairs, a revealed card, and game statistics](docs/screenshots/desktop.png)
+
+<img src="docs/screenshots/phone.png" alt="Phone gameplay with four columns of cards" width="320" />
+<img src="docs/screenshots/leaderboard.png" alt="Leaderboard with the current player's personal best" width="420" />
+
+[Tablet gameplay](docs/screenshots/tablet.png) · [Phone landscape gameplay](docs/screenshots/landscape.png)
+
+These captures use sample accounts and scores. Regenerate them from the current UI with
+`npm run screenshots`, or `npm run screenshots:docker` on hosts without Chromium's system libraries.
 
 ## Build Setup
 

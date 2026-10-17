@@ -1,10 +1,10 @@
 <template>
   <MemoryLayout>
-    <q-page class="full-width column flex-center bg-dark text-white q-pa-xl">
+    <main class="full-width column flex-center text-white q-pa-xl">
       <h1 class="text-h4">Memory Game</h1>
       <p role="status">{{ error || 'Completing your Memory Game sign-in…' }}</p>
       <q-btn v-if="error" href="./" label="Return to Memory Game" color="primary" />
-    </q-page>
+    </main>
   </MemoryLayout>
 </template>
 <script setup lang="ts">
