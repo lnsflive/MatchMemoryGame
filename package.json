@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "A fun Memory Game",
   "productName": "Memory Game",
+  "type": "module",
   "author": "Jaime Gonzalez <lnsflive@gmail.com>",
   "private": true,
   "scripts": {
@@ -12,13 +13,13 @@
     "androidDebug": "quasar dev -m cordova -T android --ide",
     "build/androidIDE": "quasar build -m cordova -T android --ide",
     "buildIcons": "icongenie g -i ./src/assets/icon.png -b ./src/assets/bg.png",
-    "test": "npm run test:unit && npm run test:auth",
+    "test": "npm run typecheck && npm run test:unit",
+    "typecheck": "vue-tsc --noEmit",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:docker": "docker run --rm --network host -v \"$PWD:/work\" -w /work mcr.microsoft.com/playwright:v1.64.1-noble npx playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:auth": "node tests/auth.cjs && node tests/auth-return.cjs"
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@quasar/extras": "^2.1.0",
@@ -31,9 +32,12 @@
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@quasar/app-vite": "^3.10.3",
+    "@types/node": "^26.6.5",
     "autoprefixer": "^10.6.1",
     "dotenv": "^18.0.8",
-    "vitest": "^5.0.5"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5",
+    "vue-tsc": "^3.3.13"
   },
   "browserslist": [
     "last 10 Chrome versions",

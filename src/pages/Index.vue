@@ -47,8 +47,8 @@
           <q-btn class="column text-secondary" @click="leaderboards = !leaderboards" flat  icon-right="emoji_events">{{highScore}}</q-btn>
 </template>
     <q-page class="row full-width justify-center no-margin q-px-sm q-py-lg bg-dark" style="min-width:317px;">
-        <div v-for="(colz,index) in newArray" :key="colz" class="colz transparent no-border">
-            <q-btn :disable="!playerId || !user" rounded class="qBtn no-padding" @click="testClick">
+        <div v-for="(colz,index) in newArray" :key="index" class="colz transparent no-border">
+            <q-btn :disable="!playerId || !user" rounded class="qBtn no-padding" @click="testClick($event, colz)">
               <q-icon :color="cardColor" class="no-pointer-events flip-horizontal" :name="newArray[index]" />
             </q-btn>
         </div>
@@ -62,281 +62,255 @@
 </MemoryLayout>
 </template>
 
-<script>
-import { startGoogleLogin, getAccounts } from '../utils/google-auth'
-
-import { api } from '../boot/axios'
+<script setup lang="ts">
+import type { AxiosRequestConfig } from 'axios'
+import type { QTableColumn } from 'quasar'
+import { Notify } from 'quasar'
+import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
+import { api } from '../utils/api'
 import AccountForm from '../components/AccountForm.vue'
 import MemoryLayout from '../layouts/MemoryLayout.vue'
-import { Notify } from 'quasar'
-import { defineComponent } from 'vue';
-export default defineComponent ({
-  components: {MemoryLayout,AccountForm},
-  data: () => ({
-    catalogArray: ['shopping_cart', 'local_florist', 'favorite', 'lightbulb', 'star_rate', 'extension', 'pets', 'nightlight_round', 'photo_camera', 'cookie', 'face', 'thumb_up', 'visibility', 'build', 'savings', 'android', 'thumb_down', 'hourglass_empty', 'anchor', 'music_note', 'brush', 'color_lens', 'flash_on', 'landscape', 'checkroom', 'all_inclusive', 'airport_shuttle', 'sports_bar', 'casino', 'ac_unit', 'fitness_center', 'sports_esports', 'catching_pokemon', 'sports_football', 'cruelty_free', 'piano', 'skateboarding', 'key', 'attach_file', 'attach_money', 'headphones', 'flight', 'lunch_dining', 'two_wheeler', 'icecream'],
-    iconsArray: [],
-    newArray: [],
-    time: 0,
-    firstClick: null,
-    firstPath: null,
-    secondPath: null,
-    secondClick: null,
-    hasStarted: false,
-    canClick: true,
-    confirmed: 0,
-    mainTimer: null,
-    hasWon: false,
-    calcWidth: 5,
-    calcHeight: 4,
-    username: null,
-    score: 0,
-    cardColor: 'white',
-    moves: 0,
-    playerId: null,
-    accounts: null,
-    user: null,
-    loading: true,
-    busy: false,
-    newName: '',
-    authError: '',
-    playerInfo: [],
-    highScore: null,
-    newHighScore: false,
-    leaderboards: false,
-    timeMultiplier: 100,
-    triesMultiplier: 100,
-    serverData: null,
-    rows: [],
-    columns: [{
-      name: 'player',
-      required: true,
-      label: 'Player Name',
-      align: 'left',
-      field: 'player',
-      sortable: true
-    },{
-      name: 'score',
-      required: true,
-      label: 'Score',
-      align: 'right',
-      field: 'score',
-      sortable: true
-    }]
-  }),
-  created () {
-    this.createCatalog()
-    this.loadAccount()
-  },
-  beforeUnmount(){ clearInterval(this.mainTimer) },
-  methods: {
-    authConfig(){
-      const token = localStorage.getItem(this.accounts ? this.accounts.storageKey() : 'strapi_jwt')
-      if (!token) throw Object.assign(new Error('Sign in required'), {response:{status:401}})
-      return {headers:{Authorization:'Bearer ' + token}, withCredentials:false}
-    },
-    async login(){
-      this.authError = ''
-      try { window.location.assign(await startGoogleLogin()) }
-      catch (_) { this.authError = 'Unable to start Google sign-in. Please try again.' }
-    },
-    async loadAccount(){
-      this.loading = true
-      this.authError = ''
-      try {
-        this.accounts = await getAccounts()
-        this.user = (await api.get('/users/me', this.authConfig())).data
-        const profiles = (await api.get('/memorygames?portfolioUserId=' + encodeURIComponent(this.user.id), this.authConfig())).data
-        if (profiles.length) this.applyProfile(profiles[0])
-        else this.playerId = null
-        await this.getDB()
-      } catch(error) { this.handleError(error) }
-      finally { this.loading = false }
-    },
-    applyProfile(profile){
-      const value = Number(profile.score)
-      if (!['number', 'string'].includes(typeof profile.score) || String(profile.score).trim() === '' || !Number.isFinite(value) || !Number.isSafeInteger(value) || value < 0) throw new Error('Invalid saved profile value')
-      this.playerId = profile.id
-      this.username = profile.player
-      this.highScore = value
-    },
-    handleError(error){
-      if (error.response && error.response.status === 401) {
-        this.user = null
-        this.playerId = null
-        this.username = null
-        this.highScore = null
-        this.rows = []
-        this.hasWon = false
-        this.leaderboards = false
-        clearInterval(this.mainTimer)
-        this.authError = 'Please sign in with Google to continue.'
-      } else {
-        this.authError = 'Unable to load or save your account. Please retry.'
-      }
-      Notify.create({type: 'negative', message: this.authError})
-    },
-    async logout(){
-      this.busy = true
-      try {
-        localStorage.removeItem(this.accounts ? this.accounts.storageKey() : 'strapi_jwt')
-        try { await api.post('/auth/logout', {}, {withCredentials:true}) } catch (_) {}
-        window.location.reload()
-      } catch(error) { this.handleError(error) }
-      finally { this.busy = false }
-    },
-    async createPlayer(){
-      if (this.busy || this.newName.trim().length < 4) return
-      this.busy = true
-      this.authError = ''
-      try {
-        this.applyProfile((await api.post('/memorygames', {player: this.newName.trim().toLowerCase()}, this.authConfig())).data)
-      } catch(error) {
-        if (error.response && error.response.status === 409) {
-          if ((error.response.data.message || error.response.data.error) === 'profile_exists') await this.loadAccount()
-          else this.authError = 'That name is reserved. Choose another name or contact the administrator to migrate your existing player.'
-        } else this.handleError(error)
-      } finally { this.busy = false }
-    },
-    createCatalog(){
-      for(let i = 0; i < 10; i++){
-        const randInt = Math.floor(Math.random() * this.catalogArray.length)
-        const newData = this.catalogArray[randInt]
-        this.iconsArray.push(newData)
-        this.iconsArray.push(newData)
-        this.catalogArray.splice(randInt, 1)
-      }
-      this.shuffleCards()
-    },
-    shuffleCards(){
-      for(let i = 0; i < 20; i++){
-        const tmpMax = this.iconsArray.length
-        const index = Math.floor(Math.random() * tmpMax)
-        const newData = this.iconsArray[index]
-        this.newArray.push(newData)
-        this.iconsArray.splice(index, 1)
-      }
-    },
-    refreshPage(){
-      window.location.reload()
-    },
-    timer(){
-      this.time++
-      this.timeMultiplier--
-    },
-    reduceMultiplier(){
-      this.timeMultiplier -= 10
-    },
-    testClick(event){
-      if (!this.user || !this.playerId) return
-      // parent click boolean
-      if(this.canClick){
-        // start timer
-        if(!this.hasStarted){
-          this.hasStarted = true
-          this.mainTimer = setInterval(this.timer, 1000)
-          this.cardColor = ''
-        }
-        // get/set variables
-        const myPath = event.target.parentNode
-        // for(let i = 0; i < myPaths.length; i++){
-        //   if(myPaths[i].classList.contains('qBtn')){
-        //     myPath = event.path[1]
-        //   }
-        // }
-        const myLetter = event.target.innerText
-        // turn button blue on click
-        if(!myPath.classList.contains('active')){
-          myPath.className += ' active'
-        }
-        // check click
-        if(this.firstClick != null){
-          // second click event
-          this.secondClick = myLetter
-          this.secondPath = myPath
-          if(this.firstClick == this.secondClick){
-            // match success
-            this.resetClicks()
-          }else{
-            // match failed
-            this.canClick = false
-            this.moves++
-            this.triesMultiplier--
-            this.resetClicked()
-          }
-        } else{
-          // first click event
-          this.firstClick = myLetter
-          this.firstPath = myPath
-        }
-      }
-    },
-    resetClicks(){
-      if(this.confirmed < 9){
-        this.confirmed++
-      }else{
-        this.canClick = false
-        clearInterval(this.mainTimer)
-        const result = this.timeMultiplier * this.triesMultiplier
-        const factor = this.timeMultiplier / this.triesMultiplier
-        this.score = Math.round( (result * factor) + result )
-        if(this.score > this.highScore){
-          this.highScore = this.score
-          this.newHighScore = true
-        }
-        this.hasWon = true
-      }
-      this.firstClick = null
-      this.secondClick = null
-      this.firstPath = null
-      this.secondPath = null
-    },
-    resetClicked(){
-      setTimeout(() => {
-      this.firstClick = null
-      this.secondClick = null
-      this.firstPath.classList.remove('active')
-      this.secondPath.classList.remove('active')
-      this.firstPath = null
-      this.secondPath = null
-      this.canClick = true
-      } ,500)
-    },
-    getIndex(rowz, colz){
-      let currRowz = rowz - 1
-      let currColz = colz - 1
-      let subtract
-      if(currRowz == 0){
-        subtract = 0
-      } else if(currRowz == 1){
-        subtract = 6
-      } else if(currRowz == 2){
-        subtract = 12
-      } else if(currRowz == 3){
-        subtract = 18
-      } else{
-        subtract = 24
-      }
-      let output = [currRowz+""+currColz].join() - subtract
-      return output
-    },
-    async postScore(){
-      if (this.busy) return
-      this.busy = true
-      try {
-        await api.put('/memorygames/' + this.playerId, {score: this.highScore}, this.authConfig())
-        this.newHighScore = false
-        await this.getDB()
-        this.hasWon = false
-        this.leaderboards = true
-      } catch(error) { this.handleError(error) }
-      finally { this.busy = false }
-    },
-    async getDB(){
-      this.rows = (await api.get('/memorygames?_sort=score:desc', this.authConfig())).data
-    }
+import { getAccounts, type SharedAccountsClient } from '../utils/google-auth'
 
+type AccountUser = { id: number }
+type MemoryProfile = { id: number; player: string; score: number }
+const catalog = ['shopping_cart', 'local_florist', 'favorite', 'lightbulb', 'star_rate', 'extension', 'pets', 'nightlight_round', 'photo_camera', 'cookie', 'face', 'thumb_up', 'visibility', 'build', 'savings', 'android', 'thumb_down', 'hourglass_empty', 'anchor', 'music_note', 'brush', 'color_lens', 'flash_on', 'landscape', 'checkroom', 'all_inclusive', 'airport_shuttle', 'sports_bar', 'casino', 'ac_unit', 'fitness_center', 'sports_esports', 'catching_pokemon', 'sports_football', 'cruelty_free', 'piano', 'skateboarding', 'key', 'attach_file', 'attach_money', 'headphones', 'flight', 'lunch_dining', 'two_wheeler', 'icecream']
+const newArray = ref<string[]>([])
+const time = ref(0)
+const firstClick = ref<string | null>(null)
+const firstPath = shallowRef<HTMLElement | null>(null)
+const secondPath = shallowRef<HTMLElement | null>(null)
+const hasStarted = ref(false)
+const canClick = ref(true)
+const confirmed = ref(0)
+let mainTimer: ReturnType<typeof setInterval> | null = null
+const hasWon = ref(false)
+const username = ref<string | null>(null)
+const score = ref(0)
+const cardColor = ref('white')
+const moves = ref(0)
+const playerId = ref<number | null>(null)
+const accounts = shallowRef<SharedAccountsClient | null>(null)
+const user = shallowRef<AccountUser | null>(null)
+const loading = ref(true)
+const busy = ref(false)
+const newName = ref('')
+const authError = ref('')
+const highScore = ref<number | null>(null)
+const newHighScore = ref(false)
+const leaderboards = ref(false)
+const timeMultiplier = ref(100)
+const triesMultiplier = ref(100)
+const rows = ref<MemoryProfile[]>([])
+const columns: QTableColumn[] = [
+  { name: 'player', required: true, label: 'Player Name', align: 'left', field: 'player', sortable: true },
+  { name: 'score', required: true, label: 'Score', align: 'right', field: 'score', sortable: true }
+]
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function parseUser(value: unknown): AccountUser {
+  if (!isRecord(value) || typeof value.id !== 'number' || !Number.isSafeInteger(value.id) || value.id < 1) throw new Error('Invalid account response')
+  return { id: value.id }
+}
+
+function parseProfile(value: unknown): MemoryProfile {
+  if (!isRecord(value) || typeof value.id !== 'number' || !Number.isSafeInteger(value.id) || value.id < 1 || typeof value.player !== 'string') throw new Error('Invalid saved profile')
+  const parsedScore = Number(value.score)
+  if (!['number', 'string'].includes(typeof value.score) || String(value.score).trim() === '' || !Number.isSafeInteger(parsedScore) || parsedScore < 0) throw new Error('Invalid saved profile value')
+  return { id: value.id, player: value.player, score: parsedScore }
+}
+
+function parseProfiles(value: unknown): MemoryProfile[] {
+  if (!Array.isArray(value)) throw new Error('Invalid profile response')
+  return value.map(parseProfile)
+}
+
+function authConfig(): AxiosRequestConfig {
+  const token = localStorage.getItem(accounts.value?.storageKey() ?? 'strapi_jwt')
+  if (!token) throw Object.assign(new Error('Sign in required'), { response: { status: 401 } })
+  return { headers: { Authorization: `Bearer ${token}` }, withCredentials: false }
+}
+
+function applyProfile(profile: MemoryProfile) {
+  playerId.value = profile.id
+  username.value = profile.player
+  highScore.value = profile.score
+}
+
+function errorStatus(error: unknown): number | undefined {
+  return isRecord(error) && 'response' in error && isRecord(error.response) && typeof error.response.status === 'number'
+    ? error.response.status
+    : undefined
+}
+
+function errorCode(error: unknown): string | undefined {
+  if (!isRecord(error) || !('response' in error) || !isRecord(error.response) || !('data' in error.response) || !isRecord(error.response.data)) return undefined
+  const { message, error: code } = error.response.data
+  return typeof message === 'string' ? message : typeof code === 'string' ? code : undefined
+}
+
+function stopTimer() {
+  if (mainTimer !== null) clearInterval(mainTimer)
+  mainTimer = null
+}
+
+function handleError(error: unknown) {
+  if (errorStatus(error) === 401) {
+    user.value = null
+    playerId.value = null
+    username.value = null
+    highScore.value = null
+    rows.value = []
+    hasWon.value = false
+    leaderboards.value = false
+    stopTimer()
+    authError.value = 'Please sign in with Google to continue.'
+  } else {
+    authError.value = 'Unable to load or save your account. Please retry.'
   }
-})
+  Notify.create({ type: 'negative', message: authError.value })
+}
+
+async function getDB() {
+  rows.value = parseProfiles((await api.get<unknown>('/memorygames?_sort=score:desc', authConfig())).data)
+}
+
+async function loadAccount() {
+  loading.value = true
+  authError.value = ''
+  try {
+    accounts.value = await getAccounts()
+    user.value = parseUser((await api.get<unknown>('/users/me', authConfig())).data)
+    const profiles = parseProfiles((await api.get<unknown>(`/memorygames?portfolioUserId=${encodeURIComponent(user.value.id)}`, authConfig())).data)
+    const profile = profiles[0]
+    if (profile) applyProfile(profile)
+    else playerId.value = null
+    await getDB()
+  } catch (error) { handleError(error) }
+  finally { loading.value = false }
+}
+
+async function logout() {
+  busy.value = true
+  try {
+    localStorage.removeItem(accounts.value?.storageKey() ?? 'strapi_jwt')
+    try { await api.post('/auth/logout', {}, { withCredentials: true }) } catch (_) {}
+    window.location.reload()
+  } catch (error) { handleError(error) }
+  finally { busy.value = false }
+}
+
+async function createPlayer() {
+  if (busy.value || newName.value.trim().length < 4) return
+  busy.value = true
+  authError.value = ''
+  try {
+    applyProfile(parseProfile((await api.post<unknown>('/memorygames', { player: newName.value.trim().toLowerCase() }, authConfig())).data))
+  } catch (error) {
+    if (errorStatus(error) === 409) {
+      if (errorCode(error) === 'profile_exists') await loadAccount()
+      else authError.value = 'That name is reserved. Choose another name or contact the administrator to migrate your existing player.'
+    } else handleError(error)
+  } finally { busy.value = false }
+}
+
+function createCatalog() {
+  const available = [...catalog]
+  const pairs: string[] = []
+  for (let index = 0; index < 10; index++) {
+    const randomIndex = Math.floor(Math.random() * available.length)
+    const [icon] = available.splice(randomIndex, 1)
+    if (!icon) throw new Error('Unable to create the card catalog')
+    pairs.push(icon, icon)
+  }
+  while (pairs.length > 0) {
+    const randomIndex = Math.floor(Math.random() * pairs.length)
+    const [icon] = pairs.splice(randomIndex, 1)
+    if (!icon) throw new Error('Unable to shuffle the card catalog')
+    newArray.value.push(icon)
+  }
+}
+
+function refreshPage() { window.location.reload() }
+
+function timer() {
+  time.value++
+  timeMultiplier.value--
+}
+
+function resetClicks() {
+  if (confirmed.value < 9) confirmed.value++
+  else {
+    canClick.value = false
+    stopTimer()
+    const result = timeMultiplier.value * triesMultiplier.value
+    const factor = timeMultiplier.value / triesMultiplier.value
+    score.value = Math.round((result * factor) + result)
+    if (score.value > (highScore.value ?? 0)) {
+      highScore.value = score.value
+      newHighScore.value = true
+    }
+    hasWon.value = true
+  }
+  firstClick.value = null
+  firstPath.value = null
+  secondPath.value = null
+}
+
+function resetClicked() {
+  window.setTimeout(() => {
+    firstClick.value = null
+    firstPath.value?.classList.remove('active')
+    secondPath.value?.classList.remove('active')
+    firstPath.value = null
+    secondPath.value = null
+    canClick.value = true
+  }, 500)
+}
+
+function testClick(event: Event, icon: string) {
+  if (!user.value || !playerId.value || !canClick.value || !(event.currentTarget instanceof HTMLElement)) return
+  if (!hasStarted.value) {
+    hasStarted.value = true
+    mainTimer = setInterval(timer, 1000)
+    cardColor.value = ''
+  }
+  const card = event.currentTarget
+  card.classList.add('active')
+  if (firstClick.value === null) {
+    firstClick.value = icon
+    firstPath.value = card
+    return
+  }
+  secondPath.value = card
+  if (firstClick.value === icon) resetClicks()
+  else {
+    canClick.value = false
+    moves.value++
+    triesMultiplier.value--
+    resetClicked()
+  }
+}
+
+async function postScore() {
+  if (busy.value || playerId.value === null || highScore.value === null) return
+  busy.value = true
+  try {
+    await api.put(`/memorygames/${playerId.value}`, { score: highScore.value }, authConfig())
+    newHighScore.value = false
+    await getDB()
+    hasWon.value = false
+    leaderboards.value = true
+  } catch (error) { handleError(error) }
+  finally { busy.value = false }
+}
+
+createCatalog()
+onMounted(loadAccount)
+onBeforeUnmount(stopTimer)
 </script>
 <style lang="sass" scoped>
 html

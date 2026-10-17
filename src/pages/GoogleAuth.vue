@@ -7,18 +7,17 @@
     </q-page>
   </MemoryLayout>
 </template>
-<script>
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import MemoryLayout from '../layouts/MemoryLayout.vue'
 import { completeGoogleLogin } from '../utils/google-auth'
-export default {
-  components: {MemoryLayout},
-  props: {search: {type:String, required:true}},
-  data: () => ({error:''}),
-  async mounted() {
-    const search = this.search
-    window.history.replaceState(null, '', window.location.pathname)
-    try { window.location.replace(await completeGoogleLogin(search)) }
-    catch (_) { this.error = 'Sign-in could not be completed. Please try again.' }
-  }
-}
+
+const props = defineProps<{ search: string }>()
+const error = ref('')
+
+onMounted(async () => {
+  window.history.replaceState(null, '', window.location.pathname)
+  try { window.location.replace(await completeGoogleLogin(props.search)) }
+  catch (_) { error.value = 'Sign-in could not be completed. Please try again.' }
+})
 </script>

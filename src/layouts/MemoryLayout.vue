@@ -10,6 +10,6 @@
     <q-footer v-if="$slots.footer" class="justify-around row no-wrap full-width q-pa-sm" style="min-width:317px;"><slot name="footer" /></q-footer>
   </q-layout>
 </template>
-<script>
-export default {name:'MemoryLayout'}
+<script setup lang="ts">
+defineOptions({ name: 'MemoryLayout' })
 </script>

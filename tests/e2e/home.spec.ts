@@ -1,6 +1,6 @@
-const { test, expect } = require('@playwright/test')
+import { expect, test } from '@playwright/test'
 
-test('shows the memory game', async ({ page }) => {
+test('shows the memory game and mounts Google sign-in', async ({ page }) => {
   await page.route('**/auth/client.v1.js', route => route.fulfill({
     contentType: 'text/javascript',
     body: `window.SharedAccounts = {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getAccounts } from '../../src/utils/google-auth'
+import { getAccounts, type SharedAccountsClient } from '../../src/utils/google-auth'
 
 describe('shared Google account client', () => {
   afterEach(() => {
@@ -8,8 +8,11 @@ describe('shared Google account client', () => {
   })
 
   it('initializes the memory app against the configured API', async () => {
-    const client = {
-      initialize: vi.fn().mockResolvedValue(undefined)
+    const client: SharedAccountsClient = {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      storageKey: () => 'strapi_jwt',
+      startGoogle: vi.fn().mockResolvedValue('https://accounts.example.test/connect/google'),
+      completeGoogle: vi.fn().mockResolvedValue('https://memory.example.test/')
     }
     const create = vi.fn().mockReturnValue(client)
     vi.stubGlobal('window', { SharedAccounts: { create } })
