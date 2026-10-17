@@ -74,6 +74,13 @@ import { getAccounts, type SharedAccountsClient } from '../utils/google-auth'
 
 type AccountUser = { id: number }
 type MemoryProfile = { id: number; player: string; score: number }
+// TODO(scoring-history): Store an immutable record for every completed game before designing scoring v2.
+// Record scoringVersion, score, durationMs, matches, mismatches, pairAttempts, cardCount,
+// a server-generated completedAt value, and clientVersion. Keep the player profile separate
+// and point it to the best run instead of overwriting the only result. On this ten-pair board,
+// pairAttempts equals 10 + mismatches and cardFlips equals pairAttempts * 2. The current `moves`
+// value counts mismatches, not all turns. Have the API calculate the score from the raw inputs.
+// If cheat resistance matters, let the server own the run start and completion timestamps too.
 const catalog = ['shopping_cart', 'local_florist', 'favorite', 'lightbulb', 'star_rate', 'extension', 'pets', 'nightlight_round', 'photo_camera', 'cookie', 'face', 'thumb_up', 'visibility', 'build', 'savings', 'android', 'thumb_down', 'hourglass_empty', 'anchor', 'music_note', 'brush', 'color_lens', 'flash_on', 'landscape', 'checkroom', 'all_inclusive', 'airport_shuttle', 'sports_bar', 'casino', 'ac_unit', 'fitness_center', 'sports_esports', 'catching_pokemon', 'sports_football', 'cruelty_free', 'piano', 'skateboarding', 'key', 'attach_file', 'attach_money', 'headphones', 'flight', 'lunch_dining', 'two_wheeler', 'icecream']
 const newArray = ref<string[]>([])
 const time = ref(0)
@@ -246,6 +253,23 @@ function resetClicks() {
   else {
     canClick.value = false
     stopTimer()
+    // TODO(scoring-v2): Replace this formula only with a versioned leaderboard migration.
+    // Let t = 100 - elapsed seconds and m = 100 - mismatches. The formula simplifies to
+    // score = t * (t + m), with a best score of 20,000. Near that maximum, one second costs
+    // about 299 points while one mismatch costs 100, so the formula favors speed heavily.
+    // At 100 mismatches, division by zero produces NaN. Longer games can produce negative
+    // or rising scores because both multipliers continue below zero.
+    //
+    // A saved score does not usually identify its original inputs. For example, 11,550 can
+    // represent 23 seconds and 27 mismatches, 25 seconds and 21 mismatches, or 30 seconds and
+    // 5 mismatches. Of 5,781 scores reachable within 0 to 99 seconds and mismatches, 2,358 have
+    // more than one input pair. An importer may enumerate valid pairs, but guessed values must
+    // be marked as inferred rather than treated as recorded game data.
+    //
+    // Preserve existing scores in a read-only v1 leaderboard. Start recording raw v1 runs now,
+    // tune v2 from those runs, and start a separate v2 leaderboard. If old scores must appear in
+    // v2, mark them as provisional migrated scores. Do not base scoring on the current high score,
+    // because that target changes whenever a player sets a record.
     const result = timeMultiplier.value * triesMultiplier.value
     const factor = timeMultiplier.value / triesMultiplier.value
     score.value = Math.round((result * factor) + result)
@@ -299,6 +323,9 @@ async function postScore() {
   if (busy.value || playerId.value === null || highScore.value === null) return
   busy.value = true
   try {
+    // TODO(scoring-history): This endpoint currently saves only the player's best score.
+    // Change it to submit the completed run inputs above. Let the API append the run,
+    // calculate its versioned score, and update the player's best-run reference atomically.
     await api.put(`/memorygames/${playerId.value}`, { score: highScore.value }, authConfig())
     newHighScore.value = false
     await getDB()
